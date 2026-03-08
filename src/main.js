@@ -61,10 +61,6 @@ const applySearching = initSearching('search');
 
 const applyFiltering = initFiltering(sampleTable.filter.elements, {    // передаём элементы фильтра
     searchBySeller: indexes.sellers                                    // для элемента с именем searchBySeller устанавливаем массив продавцов
-    //totalFrom: 'total',
-    //totalTo: 'total',
-    //searchByDate: 'date',
-    //searchByCustomer: 'customer'
 });
 
 const applySorting = initSorting([        // Нам нужно передать сюда массив элементов, которые вызывают сортировку, чтобы изменять их визуальное представление
