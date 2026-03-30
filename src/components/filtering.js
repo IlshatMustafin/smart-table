@@ -1,47 +1,54 @@
-import {createComparison, defaultRules} from "../lib/compare.js";
-
-// @todo: #4.3 — настроить компаратор
-const compare = createComparison(defaultRules);
-
-export function initFiltering(elements, indexes) {
-    // @todo: #4.1 — заполнить выпадающие списки опциями
+export function initFiltering(elements) {
+  const updateIndexes = (elements, indexes) => {
     Object.keys(indexes).forEach((elementName) => {
-        if (elements[elementName]) {
-            elements[elementName].append(
-                ...Object.values(indexes[elementName]).map(name => {
-                    const option = document.createElement('option');
-                    option.value = name;
-                    option.textContent = name;
-                    return option;
-                })
-            );
+      if (elements[elementName]) {
+        elements[elementName].append(
+          ...Object.values(indexes[elementName]).map(name => {
+            const el = document.createElement('option');
+            el.textContent = name;
+            el.value = name;
+            return el;
+          })
+        );
+      }
+    });
+  };
+
+  const applyFiltering = (query, state, action) => {
+    // Обработать очистку поля
+    if (action && action.name === 'clear') {
+      const field = action.closest('.filter-wrapper')?.querySelector('input, select');
+      if (field) {
+        field.value = '';
+        const stateKey = action.dataset.field;
+        if (stateKey) {
+          state[stateKey] = '';
         }
+      }
+    }
+
+    // Отфильтровать данные, используя компаратор (теперь формируем параметры для серверного запроса)
+    const filter = {};
+
+    Object.keys(elements).forEach(key => {
+      if (elements[key]) {
+        // Проверяем, что элемент — поле ввода или селект, и у него есть значение
+        if (['INPUT', 'SELECT'].includes(elements[key].tagName) && elements[key].value) {
+          // Формируем вложенный объект фильтра в query
+          filter[`filter[${elements[key].name}]`] = elements[key].value;
+        }
+      }
     });
 
-    return (data, state, action) => {
-        // @todo: #4.2 — обработать очистку поля
-        if (action && action.name === 'clear') {
-            const field = action.closest('.filter-wrapper')?.querySelector('input, select');
-            if (field) {
-                field.value = '';
-                const stateKey = action.dataset.field;
-                if (stateKey) {
-                    state[stateKey] = '';
-                }
-            }
-        }
+    // Если в фильтре есть какие‑то параметры, добавляем их к запросу
+    // Иначе возвращаем исходный query без изменений
+    return Object.keys(filter).length
+      ? Object.assign({}, query, filter)
+      : query;
+  };
 
-        // @todo: #4.5 — отфильтровать данные используя компаратор
-        const filterState = {...state};
-        if (state.totalFrom || state.totalTo) {
-            filterState.total = [
-                state.totalFrom ? parseFloat(state.totalFrom) : null,
-                state.totalTo ? parseFloat(state.totalTo) : null
-            ];
-            delete filterState.totalFrom;
-            delete filterState.totalTo;
-        }
-
-        return data.filter(row => compare(row, filterState));
-    }
+  return {
+    updateIndexes,
+    applyFiltering
+  };
 }
